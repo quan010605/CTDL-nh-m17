@@ -267,6 +267,7 @@ int main() {
                 themAnh(&head, 8, "01/01/2024", "10:00:00", "Nha_Trang");
                 themAnh(&head, 9, "02/01/2024", "11:00:00", "Da_Nang");
                 themAnh(&head, 10, "03/01/2024", "09:00:00", "Can_Tho");
+                themAnh(&head, 11, "01/12/2024", "06:00:01", "Ha_Noi");
                 hienThiAnh(head, "Ảnh trong album");
                 break;
             }
