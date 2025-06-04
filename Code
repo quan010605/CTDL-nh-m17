@@ -1,0 +1,373 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Cấu trúc cho thông tin ảnh
+typedef struct Anh {
+    int id;
+    char ngay[11];    // DD/MM/YYYY
+    char gio[10];    
+    char diaDiem[30]; 
+} Anh;
+
+// Cấu trúc cho danh sách liên kết
+typedef struct Node {
+    Anh data;
+    struct Node* next;
+} Node;
+
+Node* head = NULL;
+Node* trash = NULL;
+// Khai báo hàm (forward declaration)
+void inTieuDeBang();
+void inMotAnh(const Anh* anh);
+// Hiển thị danh sách ảnh
+void hienThiAnh(Node* head, const char* tieuDe) {
+    if (!head) {
+        printf("%s trống!\n", tieuDe);
+        return;
+    }
+    printf("\n--- %s ---\n", tieuDe);
+    inTieuDeBang();
+    Node* current = head;
+    while (current) {
+        inMotAnh(&current->data);
+        current = current->next;
+    }
+}
+// In tiêu đề bảng
+void inTieuDeBang() {
+    printf("+------+------------+----------+---------------------+\n");
+    printf("|  ID  |    Ngày    |   Giờ    |    Địa điểm         |\n");
+    printf("+------+------------+----------+---------------------+\n");
+}
+
+// In thông tin một ảnh
+void inMotAnh(const Anh* anh) {
+    printf("| %4d | %10s | %9s | %-19s |\n",
+           anh->id, anh->ngay, anh->gio, anh->diaDiem);
+    printf("+------+------------+----------+---------------------+\n");
+}
+
+
+// Thêm ảnh vào danh sách
+void themAnh(Node** head, int id, const char* ngay, const char* gio,
+             const char* diaDiem) {
+
+    Node* new_node = (Node*)malloc(sizeof(Node));
+    if (!new_node) {
+        printf("Không đủ bộ nhớ!\n");
+        return;
+    }
+
+    new_node->data.id = id;
+    snprintf(new_node->data.ngay, sizeof(new_node->data.ngay), "%s", ngay);
+    snprintf(new_node->data.gio, sizeof(new_node->data.gio), "%s", gio);
+    snprintf(new_node->data.diaDiem, sizeof(new_node->data.diaDiem), "%s", diaDiem);
+    new_node->next = NULL;
+
+    if (!*head) {
+        *head = new_node;
+    } else {
+        Node* temp = *head;
+        while (temp->next) temp = temp->next;
+        temp->next = new_node;
+    }
+    printf("Đã thêm ảnh với ID %d tại %s\n", id, diaDiem);
+}
+
+// Tìm ảnh theo ID
+void timAnhTheoID(Node* head, int id) {
+    Node* current = head;
+    while (current) {
+        if (current->data.id == id) {
+            printf("Tìm thấy ảnh:\n");
+            inTieuDeBang();
+            inMotAnh(&current->data);
+            return;
+        }
+        current = current->next;
+    }
+    printf("Không tìm thấy ảnh có ID %d.\n", id);
+}
+
+// Sửa thông tin ảnh
+void suaAnh(Node* head, int id) {
+    Node* current = head;
+    while (current) {
+        if (current->data.id == id) {
+            char ngay[11], gio[10], diaDiem[30];
+            printf("Nhập ngày (DD/MM/YYYY): ");
+            scanf("%10s", ngay);
+            while (getchar() != '\n');
+            printf("Nhập thời gian: ");
+            scanf("%9s", gio);
+            while (getchar() != '\n');
+            printf("Nhập tên địa điểm: ");
+            scanf("%29s", diaDiem);
+            while (getchar() != '\n');
+
+            snprintf(current->data.ngay, sizeof(current->data.ngay), "%s", ngay);
+            snprintf(current->data.gio, sizeof(current->data.gio), "%s", gio);
+            snprintf(current->data.diaDiem, sizeof(current->data.diaDiem), "%s", diaDiem);
+            printf("Sửa ảnh thành công!\n");
+            return;
+        }
+        current = current->next;
+    }
+    printf("Không tìm thấy ảnh có ID %d.\n", id);
+}
+
+// Kiểm tra ảnh trùng lặp
+void kiemTraAnhTrung(Node* head) {
+    if (!head) {
+        printf("Danh sách ảnh trống!\n");
+        return;
+    }
+    int found = 0;
+    Node* current = head;
+    printf("\n--- ẢNH TRÙNG LẶP ---\n");
+    inTieuDeBang();
+    while (current) {
+        Node* runner = current->next;
+        while (runner) {
+            if (strcmp(current->data.ngay, runner->data.ngay) == 0 &&
+                strcmp(current->data.gio, runner->data.gio) == 0 &&
+                strcmp(current->data.diaDiem, runner->data.diaDiem) == 0) {
+                inMotAnh(&runner->data);
+                found = 1;
+            }
+            runner = runner->next;
+        }
+        current = current->next;
+    }
+    if (!found) printf("Không tìm thấy ảnh trùng lặp!\n");
+}
+
+// Xóa ảnh trùng lặp
+void xoaAnhTrung(Node** head, Node** trash) {
+    if (!*head) {
+        printf("Danh sách ảnh trống!\n");
+        return;
+    }
+    Node* current = *head;
+    while (current) {
+        Node* runner = current;
+        while (runner->next) {
+            if (strcmp(runner->next->data.ngay, current->data.ngay) == 0 &&
+                strcmp(runner->next->data.gio, current->data.gio) == 0 &&
+                strcmp(runner->next->data.diaDiem, current->data.diaDiem) == 0) {
+                Node* duplicate = runner->next;
+                runner->next = duplicate->next;
+                duplicate->next = *trash;
+                *trash = duplicate;
+                printf("Đã xóa ảnh trùng lặp ID %d tại %s\n", duplicate->data.id, duplicate->data.diaDiem);
+            } else {
+                runner = runner->next;
+            }
+        }
+        current = current->next;
+    }
+    printf("Hoàn tất xóa ảnh trùng lặp!\n");
+}
+
+// Xóa ảnh
+void xoaAnh(Node** head, Node** trash, int id) {
+    Node* current = *head;
+    Node* prev = NULL;
+    while (current && current->data.id != id) {
+        prev = current;
+        current = current->next;
+    }
+    if (!current) {
+        printf("Không tìm thấy ảnh có ID %d!\n", id);
+        return;
+    }
+    if (!prev) {
+        *head = current->next;
+    } else {
+        prev->next = current->next;
+    }
+    current->next = *trash;
+    *trash = current;
+    printf("Đã xóa ảnh ID %d, chuyển vào thùng rác.\n", id);
+}
+
+// Khôi phục ảnh từ thùng rác
+void khoiPhucAnh(Node** head, Node** trash, int id) {
+    Node* current = *trash;
+    Node* prev = NULL;
+    while (current && current->data.id != id) {
+        prev = current;
+        current = current->next;
+    }
+    if (!current) {
+        printf("Không tìm thấy ảnh có ID %d trong thùng rác.\n", id);
+        return;
+    }
+    if (!prev) {
+        *trash = current->next;
+    } else {
+        prev->next = current->next;
+    }
+    current->next = *head;
+    *head = current;
+    printf("Đã khôi phục ảnh ID %d.\n", id);
+}
+
+// Hiển thị menu
+void hienThiMenu() {
+    printf("\n--------- MENU: QUẢN LÝ ALBUM ẢNH ---------\n");
+    printf("1. Thêm ảnh mới vào album\n");
+    printf("2. Hiển thị ảnh trong album\n");
+    printf("3. Tìm kiếm ảnh theo ID\n");
+    printf("4. Sửa thông tin ảnh\n");
+    printf("5. Hiển thị ảnh trùng lặp\n");
+    printf("6. Xóa ảnh trùng lặp\n");
+    printf("7. Xóa ảnh trong album\n");
+    printf("8. Hiển thị thùng rác\n");
+    printf("9. Khôi phục ảnh đã xóa\n");
+    printf("0. Thoát\n");
+    printf("Nhập lựa chọn: ");
+}
+
+// Giải phóng bộ nhớ
+void giaiPhongBoNho(Node** head) {
+    Node* current = *head;
+    while (current) {
+        Node* temp = current;
+        current = current->next;
+        free(temp);
+    }
+    *head = NULL;
+}
+
+int main() {
+    int luaChon, id, n;
+
+    do {
+        hienThiMenu();
+        if (scanf("%d", &luaChon) != 1) {
+            printf("Lựa chọn không hợp lệ!\n");
+            while (getchar() != '\n');
+            continue;
+        }
+        while (getchar() != '\n');
+
+        switch (luaChon) {
+            case 1: {
+                printf("\t----- Thêm ảnh vào album -----\t\n");
+                themAnh(&head, 1, "01/12/2024", "06:00:01", "Ha_Noi");
+                themAnh(&head, 2, "01/12/2024", "08:00:24", "Da_Lat");
+                themAnh(&head, 3, "02/12/2024", "08:15:33", "Hoi_An");
+                themAnh(&head, 4, "02/12/2024", "08:15:33", "Hoi_An");
+                themAnh(&head, 5, "01/12/2024", "06:00:01", "Sa_Pa");
+                themAnh(&head, 6, "02/12/2024", "08:15:33", "Phu_Quoc");
+                themAnh(&head, 7, "26/07/2023", "01:01:04", "Hue");
+                themAnh(&head, 8, "01/01/2024", "10:00:00", "Nha_Trang");
+                themAnh(&head, 9, "02/01/2024", "11:00:00", "Da_Nang");
+                themAnh(&head, 10, "03/01/2024", "09:00:00", "Can_Tho");
+                hienThiAnh(head, "Ảnh trong album");
+                break;
+            }
+            case 2:
+                hienThiAnh(head, "Ảnh trong album");
+                break;
+            case 3:
+                printf("\t----- Tìm kiếm ảnh theo ID -----\t\n");
+                printf("Nhập số lượng ảnh cần tìm: ");
+                if (scanf("%d", &n) != 1 || n < 0) {
+                    printf("Số lượng không hợp lệ!\n");
+                    while (getchar() != '\n');
+                    break;
+                }
+                while (getchar() != '\n');
+                for (int i = 0; i < n; i++) {
+                    printf("Nhập ID: ");
+                    if (scanf("%d", &id) != 1) {
+                        printf("ID không hợp lệ!\n");
+                        while (getchar() != '\n');
+                        continue;
+                    }
+                    while (getchar() != '\n');
+                    timAnhTheoID(head, id);
+                }
+                break;
+            case 4:
+                printf("\t----- Sửa thông tin ảnh -----\t\n");
+                printf("Nhập ID ảnh cần sửa: ");
+                if (scanf("%d", &id) != 1) {
+                    printf("ID không hợp lệ!\n");
+                    while (getchar() != '\n');
+                    break;
+                }
+                while (getchar() != '\n');
+                suaAnh(head, id);
+                hienThiAnh(head, "Ảnh trong album");
+                break;
+            case 5:
+                printf("\t----- Ảnh trùng lặp -----\t\n");
+                kiemTraAnhTrung(head);
+                break;
+            case 6:
+                printf("\t----- Xóa ảnh trùng lặp -----\t\n");
+                xoaAnhTrung(&head, &trash);
+                hienThiAnh(head, "Ảnh trong album");
+                break;
+            case 7:
+                printf("\t----- Xóa ảnh trong album -----\t\n");
+                printf("Nhập số lượng ảnh cần xóa: ");
+                if (scanf("%d", &n) != 1 || n < 0) {
+                    printf("Số lượng không hợp lệ!\n");
+                    while (getchar() != '\n');
+                    break;
+                }
+                while (getchar() != '\n');
+                for (int i = 0; i < n; i++) {
+                    printf("Nhập ID: ");
+                    if (scanf("%d", &id) != 1) {
+                        printf("ID không hợp lệ!\n");
+                        while (getchar() != '\n');
+                        continue;
+                    }
+                    while (getchar() != '\n');
+                    xoaAnh(&head, &trash, id);
+                }
+                hienThiAnh(head, "Ảnh trong album");
+                break;
+            case 8:
+                hienThiAnh(trash, "Ảnh trong thùng rác");
+                break;
+            case 9:
+                printf("\t----- Khôi phục ảnh đã xóa -----\t\n");
+                printf("Nhập số lượng ảnh cần khôi phục: ");
+                if (scanf("%d", &n) != 1 || n < 0) {
+                    printf("Số lượng không hợp lệ!\n");
+                    while (getchar() != '\n');
+                    break;
+                }
+                while (getchar() != '\n');
+                for (int i = 0; i < n; i++) {
+                    printf("Nhập ID: ");
+                    if (scanf("%d", &id) != 1) {
+                        printf("ID không hợp lệ!\n");
+                        while (getchar() != '\n');
+                        continue;
+                    }
+                    while (getchar() != '\n');
+                    khoiPhucAnh(&head, &trash, id);
+                }
+                hienThiAnh(head, "Ảnh trong album");
+                break;
+            case 0:
+                printf("Thoát chương trình.\n");
+                break;
+            default:
+                printf("Lựa chọn không hợp lệ!\n");
+        }
+    } while (luaChon != 0);
+
+    giaiPhongBoNho(&head);
+    giaiPhongBoNho(&trash);
+    return 0;
+}
